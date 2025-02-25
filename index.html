@@ -6,117 +6,159 @@
     <title>Custom Card Generator</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap');
-        
         * {
             box-sizing: border-box;
             font-family: 'Cairo', sans-serif;
         }
-        
         body {
             min-height: 100vh;
-            min-width: 100vw;
             background-color: #f4f4f4;
             text-align: center;
-            color: #333;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 100px;
-        }
-        
-        .container {
-            border: 1px solid #ddd;
-            border-radius: 15px;
             padding: 20px;
-            background: white;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
         }
-        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .design-selection img {
+            width: 80px;
+            cursor: pointer;
+            margin: 10px;
+            border: 2px solid transparent;
+            transition: 0.3s;
+        }
+        .design-selection img.selected {
+            border-color: #6fc1b2;
+        }
+        .preview {
+            position: relative;
+            display: inline-block;
+            width: 500px;
+        }
+        .preview canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+        }
+        .card-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
         .card-form input {
-            margin-bottom: 10px;
+            width: 80%;
             padding: 10px;
-            width: 90%;
+            margin: 10px 0;
             border-radius: 5px;
             border: 1px solid #ccc;
         }
-        
-        .card-form button {
+        .slider-container {
+            width: 80%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Create 2 columns */
+            gap: 20px;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .slider-container label {
+            margin-top: 10px;
+        }
+        .slider-container input {
+            width: 200px;
+            background-color: #062c6e;
+        }
+        button {
             padding: 10px 20px;
-            background-color: #6fc1b2;
+            background-color: #062c6e;
             color: #fff;
             border: none;
             cursor: pointer;
             border-radius: 5px;
-            margin: 10px;
-        }
-        
-        .result img {
-            max-width: 100%;
-            margin-top: 20px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Custom Card Generator</h1>
-        <div class="card-form">
-            <input type="text" id="nameInput" placeholder="Enter Name" required>
-            <input type="text" id="positionInput" placeholder="Enter Position" required>
-            <button onclick="generateCard()">Generate Card</button>
-            <button onclick="downloadCard()">Download Card</button>
+        <div class="design-selection">
+            <img src="https://ramworld.net/greetingcardgenerator/ramadancard1.png" onclick="selectDesign(this)">
+            <img src="https://ramworld.net/greetingcardgenerator/ramadancard2.png" onclick="selectDesign(this)">
+            <img src="https://ramworld.net/greetingcardgenerator/ramadancard3.png" onclick="selectDesign(this)">
+            <img src="https://ramworld.net/greetingcardgenerator/ramadancard4.png" onclick="selectDesign(this)">
         </div>
-        <div id="resultContainer" class="result" style="display: none;">
-            <img id="resultImage">
+        <div class="card-form">
+            <input type="text" id="nameInput" placeholder="Enter Name" oninput="updatePreview()">
+            <input type="text" id="positionInput" placeholder="Enter Position" oninput="updatePreview()">
+            <div class="slider-container">
+                <div class="slider-group">
+                    <label>Text Horizontal Position</label>
+                    <input type="range" id="textX" min="0" max="1000" value="250" oninput="updatePreview()">
+                </div>
+                <div class="slider-group">
+                    <label>Text Vertical Position</label>
+                    <input type="range" id="textY" min="0" max="1000" value="150" oninput="updatePreview()">
+                </div>
+            </div>
+            <button onclick="generateCard()">Generate & Download</button>
+        </div>
+        <div class="preview" id="previewContainer">
+            <canvas id="previewCanvas"></canvas>
         </div>
     </div>
-    
+
     <script>
-        function generateCard() {
-            var name = document.getElementById("nameInput").value;
-            var position = document.getElementById("positionInput").value;
-            var imageUrl = "https://images.ctfassets.net/jrh3lrn7oql1/kh8shtb8kM4dvC7yaABDN/065847f91329a858f769816a205e13f2/SDCGREETING.png";
-            
-            if (name !== "" && position !== "") {
-                var canvas = document.createElement("canvas");
-                var context = canvas.getContext("2d");
-                var image = new Image();
-                
-                image.crossOrigin = "anonymous"; // Fix CORS issue
-                image.onload = function() {
-                    canvas.width = image.width;
-                    canvas.height = image.height;
-                    context.drawImage(image, 0, 0);
-                    
-                    context.font = "40px Cairo, sans-serif";
-                    context.fillStyle = "#333";
-                    context.textAlign = "center";
-                    context.textBaseline = "middle";
-                    
-                    context.fillText(name, canvas.width / 2, canvas.height - 180);
-                    context.fillText(position, canvas.width / 2, canvas.height - 140);
-                    
-                    var resultImage = document.getElementById("resultImage");
-                    resultImage.src = canvas.toDataURL("image/png");
-                    document.getElementById("resultContainer").style.display = "block";
-                };
-                
-                image.src = imageUrl;
-            }
+        let selectedDesign = "";
+        function selectDesign(img) {
+            document.querySelectorAll('.design-selection img').forEach(el => el.classList.remove('selected'));
+            img.classList.add('selected');
+            selectedDesign = img.src;
+            updatePreview();
         }
-        
-        function downloadCard() {
-            var imageCard = document.getElementById("resultImage");
-            if (imageCard.src && imageCard.src.startsWith("data:image")) {
-                var link = document.createElement("a");
-                link.href = imageCard.src;
+
+        function updatePreview() {
+            let canvas = document.getElementById("previewCanvas");
+            let ctx = canvas.getContext("2d");
+            let image = new Image();
+            image.src = selectedDesign;
+            image.onload = function() {
+                canvas.width = image.width;  // Set canvas width based on image's natural width
+                canvas.height = image.height;  // Set canvas height based on image's natural height
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas before drawing the new image
+                ctx.drawImage(image, 0, 0, image.width, image.height);
+                ctx.font = "30px Cairo, sans-serif";
+                ctx.fillStyle = "#333";
+                ctx.textAlign = "center";
+                let textX = document.getElementById("textX").value;
+                let textY = document.getElementById("textY").value;
+                ctx.fillText(document.getElementById("nameInput").value, textX, textY);
+                ctx.fillText(document.getElementById("positionInput").value, textX, parseInt(textY) + 40);
+            };
+        }
+
+        function generateCard() {
+            let canvas = document.getElementById("previewCanvas");
+            // Ensure that the canvas is not empty
+            if (canvas.width > 0 && canvas.height > 0) {
+                let link = document.createElement("a");
+                link.href = canvas.toDataURL("image/png");
                 link.download = "Custom_Card.png";
-                document.body.appendChild(link);
+                
+                // Trigger the download by simulating a click event
                 link.click();
-                document.body.removeChild(link);
+            } else {
+                alert("Please generate the card preview first!");
             }
         }
     </script>
