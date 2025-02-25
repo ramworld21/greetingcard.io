@@ -61,7 +61,7 @@
         .slider-container {
             width: 80%;
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* Create 2 columns */
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
             align-items: center;
             margin: 20px 0;
@@ -120,6 +120,7 @@
 
     <script>
         let selectedDesign = "";
+
         function selectDesign(img) {
             document.querySelectorAll('.design-selection img').forEach(el => el.classList.remove('selected'));
             img.classList.add('selected');
@@ -128,14 +129,16 @@
         }
 
         function updatePreview() {
+            if (!selectedDesign) return;
+
             let canvas = document.getElementById("previewCanvas");
             let ctx = canvas.getContext("2d");
             let image = new Image();
             image.src = selectedDesign;
             image.onload = function() {
-                canvas.width = image.width;  // Set canvas width based on image's natural width
-                canvas.height = image.height;  // Set canvas height based on image's natural height
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas before drawing the new image
+                canvas.width = image.width;
+                canvas.height = image.height;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(image, 0, 0, image.width, image.height);
                 ctx.font = "30px Cairo, sans-serif";
                 ctx.fillStyle = "#333";
@@ -149,18 +152,11 @@
 
         function generateCard() {
             let canvas = document.getElementById("previewCanvas");
-            // Ensure that the canvas is not empty
-            if (canvas.width > 0 && canvas.height > 0) {
-                let link = document.createElement("a");
-                link.href = canvas.toDataURL("image/png");
-                link.download = "Custom_Card.png";
-                
-                // Trigger the download by simulating a click event
-                link.click();
-            } else {
-                alert("Please generate the card preview first!");
+
+            if (!selectedDesign) {
+                alert("Please select a design first!");
+                return;
             }
-        }
-    </script>
-</body>
-</html>
+
+            if (canvas.width === 0 || canvas.height === 0) {
+     
